@@ -1,5 +1,6 @@
 import statsmodels.api as sm
 from processing_data import df
+import pandas as pd
 endog_var = df['prices']
 exog_vars = df[['sugar']]
 iv_vars = df[df.columns[6:26]] 
@@ -17,7 +18,7 @@ predicted_price = first_stage_model.fittedvalues
 X_second_stage = pd.concat([exog_vars, predicted_price], axis=1)
 X_second_stage.columns = list(exog_vars.columns) + ['predicted_price']  # Rename the column
 X_second_stage = sm.add_constant(X_second_stage)
-
+y = df['log_difference']
 # Perform the second stage regression (OLS)
 second_stage_model = sm.OLS(y, X_second_stage).fit()
 
