@@ -34,7 +34,7 @@ model = sm.OLS(y, X).fit()
 print(model.summary())
 
 
-from linearmodels.iv import IV2SLS
+# from linearmodels.iv import IV2SLS
 endog_var = df['prices']
 exog_vars = df[['sugar']]
 # iv_vars = df[['distance_to_market', 'supply_chain_quality']]
