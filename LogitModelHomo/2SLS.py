@@ -1,6 +1,7 @@
 import statsmodels.api as sm
 from processing_data import df
 import pandas as pd
+import matplotlib.pyplot as plt
 endog_var = df['prices']
 exog_vars = df[['sugar']]
 iv_vars = df[df.columns[6:26]] 
@@ -24,3 +25,16 @@ second_stage_model = sm.OLS(y, X_second_stage).fit()
 
 # Output the summary of the second-stage regression
 print(second_stage_model.summary())
+
+print(second_stage_model.params.values)
+market1 = df[df['market_ids'] == 'C01Q1']
+price_sensitivity = second_stage_model.params.values[-1]
+price_elasticity = []
+for i,j in zip(market1['prices'], market1['shares']):
+    price_elasticity.append(price_sensitivity * i * (1 - j))
+plt.scatter(market1['prices'], price_elasticity)
+plt.xlabel('price')
+plt.ylabel('Own Price Elasticity')
+plt.title('Own Price Elasticity v.s. Price for C01Q1 (Homo)')
+plt.savefig('Elasticity_homo',dpi = 400)
+plt.show()
