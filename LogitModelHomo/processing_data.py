@@ -4,7 +4,7 @@ import pandas as pd
 import os
 
 df = pd.read_csv(os.path.join(os.getcwd(),'LogitModelHomo\\product_data.csv'))
-
+agent_data = pd.read_csv(os.path.join(os.getcwd(),'LogitModelHomo\\agent_data.csv'))
 df['total_market_share'] = df.groupby('market_ids')['shares'].transform('sum')
 
 # Step 2: Calculate "no market share"
