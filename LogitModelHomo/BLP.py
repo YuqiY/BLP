@@ -4,7 +4,7 @@ import os
 from scipy.optimize import minimize
 from processing_data import df
 from processing_data import agent_data
-
+import matplotlib.pyplot as plt
 def initialize_random_delta(num_products):
     # Initialize random shares for each product in a market
     # We will normalize these random values to sum to 1 (as shares should sum to 1)
@@ -317,3 +317,45 @@ args = ( product_data,agent_data)
 
 # Use scipy's minimize function to minimize the GMM objective
 result = minimize(gmm_objective_to_minimize, initial_guess, args=args, method='BFGS')
+
+betav = result.x[:3]
+alphan = result.x[3]
+bt0,al0 = result.x[4], result.x[5]
+utilities = compute_utilities(betav, alphan, product_data[product_data['market_ids'] == 'C01Q1'], agent_data[agent_data['market_ids'] == 'C01Q1'])
+utility = {"C01Q1":utilities}
+deltas = []
+for p in product_data[product_data['market_ids'] == 'C01Q1']['prices']:
+    deltas.append(bt0 + al0*p)
+deltas = np.array(deltas)
+dm1 = {'C01Q1':np.array(deltas)}
+alphas = []
+for i,j in zip(agent_data[agent_data['market_ids'] == 'C01Q1']['income'], agent_data[agent_data['market_ids'] == 'C01Q1']['nodes0']):
+    alphas.append(al0 + betav[0]*i + alphan*j)
+num_products = utilities.shape[0]
+num_agents = utilities.shape[1]
+
+# Initialize array to store estimated market shares for each product in this market
+product_shares = np.zeros(num_products)
+
+# Loop over each product
+for j in range(num_products):
+    # Numerator: w_it * exp(delta_jt + u_ijt)
+    numerator =  np.exp(deltas[j] + utilities[j, :])
+
+    # Denominator: 1 + sum_k exp(delta_kt + u_ikt) for each agent i
+    exp_term = np.exp(deltas[:, np.newaxis] + utilities)  # Shape: (num_products, num_agents)
+    denominator = 1 + np.sum(exp_term, axis=0)  # Sum over products for each agent
+
+    # Compute market share for product j in market t
+    product_shares[j] = np.mean(np.array(alphas) * numerator / denominator * (1 - numerator / denominator))
+
+elasticity = []
+for i,j,z in zip(product_data[product_data['market_ids'] == 'C01Q1']['prices'],product_data[product_data['market_ids'] == 'C01Q1']['shares'],product_shares):
+    elasticity.append(-i/j*z)
+
+plt.scatter(product_data[product_data['market_ids'] == 'C01Q1']['prices'],elasticity)
+plt.xlabel('price')
+plt.ylabel('Own Price Elasticity')
+plt.title('Own Price Elasticity v.s. Price for C01Q1 (BLP)')
+plt.savefig('Elasticity_BLP',dpi = 400)
+plt.show()
